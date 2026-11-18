@@ -1,0 +1,434 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Ashadeep Computer Institute — design system.
+ *
+ * Brand palette:
+ *   Navy   #0B1F4B  -> hero, footer, dark sections, headings
+ *   Green  #16A34A  -> primary buttons, icons, highlights
+ *   Bright #22C55E  -> accents, keyword highlights in headings
+ *   Tint   #ECFDF3  -> info cards, stat cards
+ *   Pastel tints      -> course cards (pink / orange / blue / green / peach / yellow)
+ *
+ * The @theme inline block maps CSS custom properties to Tailwind utilities
+ * (e.g. --color-navy -> bg-navy, text-navy).
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Ashadeep brand tokens */
+  --color-navy: var(--navy);
+  --color-navy-deep: var(--navy-deep);
+  --color-brand: var(--brand);
+  --color-brand-glow: var(--brand-glow);
+  --color-tint: var(--tint);
+  --color-tint-pink: var(--tint-pink);
+  --color-tint-orange: var(--tint-orange);
+  --color-tint-blue: var(--tint-blue);
+  --color-tint-sky: var(--tint-sky);
+  --color-tint-green: var(--tint-green);
+  --color-tint-peach: var(--tint-peach);
+  --color-tint-yellow: var(--tint-yellow);
+  --color-tint-amber: var(--tint-amber);
+  --color-accent-pink: var(--accent-pink);
+  --color-accent-orange: var(--accent-orange);
+  --color-accent-blue: var(--accent-blue);
+  --color-accent-sky: var(--accent-sky);
+  --color-accent-green: var(--accent-green);
+  --color-accent-peach: var(--accent-peach);
+  --color-accent-yellow: var(--accent-yellow);
+  --color-accent-amber: var(--accent-amber);
+
+  --font-sans: "Poppins", ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+:root {
+  --radius: 1rem;
+
+  /* Core shadcn tokens, themed for Ashadeep */
+  --background: #ffffff;
+  --foreground: #0b1f4b;
+  --card: #ffffff;
+  --card-foreground: #0b1f4b;
+  --popover: #ffffff;
+  --popover-foreground: #0b1f4b;
+  --primary: #16a34a;
+  --primary-foreground: #ffffff;
+  --secondary: #ecfdf3;
+  --secondary-foreground: #0b1f4b;
+  --muted: #f4f8f6;
+  --muted-foreground: #5b6b85;
+  --accent: #ecfdf3;
+  --accent-foreground: #0b1f4b;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #e5eaf2;
+  --input: #e5eaf2;
+  --ring: #16a34a;
+  --chart-1: #16a34a;
+  --chart-2: #22c55e;
+  --chart-3: #0b1f4b;
+  --chart-4: #f97316;
+  --chart-5: #3b82f6;
+  --sidebar: #0b1f4b;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #16a34a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #16306b;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: #22c55e;
+
+  /* Ashadeep brand palette */
+  --navy: #0b1f4b;
+  --navy-deep: #071633;
+  --brand: #16a34a;
+  --brand-glow: #22c55e;
+  --tint: #ecfdf3;
+  --tint-pink: #fce7f3;
+  --accent-pink: #ec4899;
+  --tint-orange: #ffedd5;
+  --accent-orange: #f97316;
+  --tint-blue: #dbeafe;
+  --accent-blue: #3b82f6;
+  --tint-sky: #e0f2fe;
+  --accent-sky: #0ea5e9;
+  --tint-green: #dcfce7;
+  --accent-green: #22c55e;
+  --tint-peach: #ffefdd;
+  --accent-peach: #fb923c;
+  --tint-yellow: #fef9c3;
+  --accent-yellow: #ca8a04;
+  --tint-amber: #fef3c7;
+  --accent-amber: #d97706;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    /* Reveal animations slide cards in from the side; never let that widen the page on phones/tablets. */
+    overflow-x: clip;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    /* Scroll-reveal elements start off-screen; clip (not hidden) keeps sticky elements working. */
+    overflow-x: clip;
+  }
+
+  img,
+  svg,
+  video {
+    max-width: 100%;
+  }
+}
+
+@layer components {
+  /* Page container — fills the whole screen width on every device */
+  .container-site {
+    @apply mx-auto w-full px-4 sm:px-6 lg:px-10 xl:px-16;
+  }
+
+  /* Primary green pill button with arrow */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-brand px-6 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-brand/25 transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-glow hover:shadow-xl hover:shadow-brand/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2;
+  }
+
+  /* Outlined white pill button (used on navy backgrounds) */
+  .btn-outline-white {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border-2 border-white/70 px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white;
+  }
+
+  /* Green circular icon holder */
+  .icon-circle {
+    @apply inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full;
+  }
+
+  /* Fluid headings: scale smoothly from 320px phones to wide desktops */
+  .section-title {
+    @apply font-extrabold tracking-tight text-navy;
+    font-size: clamp(1.5rem, 1.15rem + 1.5vw, 2.25rem);
+    line-height: 1.2;
+  }
+
+  .subsection-title {
+    @apply font-extrabold tracking-tight text-navy;
+    font-size: clamp(1.2rem, 1.05rem + 0.8vw, 1.6rem);
+    line-height: 1.25;
+  }
+
+  .page-title {
+    @apply font-extrabold tracking-tight;
+    font-size: clamp(1.75rem, 1.2rem + 2.4vw, 3rem);
+    line-height: 1.15;
+  }
+
+  /* Consistent vertical rhythm for page sections */
+  .section-y {
+    @apply py-10 sm:py-12 lg:py-14;
+  }
+
+  /* Small rounded tag used for skills, tools and categories */
+  .chip {
+    @apply inline-flex items-center rounded-full border border-border bg-tint px-3 py-1 text-xs font-semibold text-navy;
+  }
+
+  /* Horizontally scrollable row without a visible scrollbar (touch filters) */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Form controls */
+  .form-label {
+    @apply mb-1.5 block text-sm font-semibold text-navy;
+  }
+
+  .form-input {
+    @apply w-full rounded-xl border border-input bg-white px-4 py-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/70 focus:border-brand focus:ring-2 focus:ring-brand/25;
+  }
+
+  /* Scroll reveal animations (paired with the <Reveal /> component).
+     Each direction slides its content in from a different side. */
+  .reveal {
+    opacity: 0;
+    transition:
+      opacity 0.7s ease,
+      transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: opacity, transform;
+  }
+
+  .reveal-up {
+    transform: translateY(32px);
+  }
+
+  .reveal-down {
+    transform: translateY(-32px);
+  }
+
+  .reveal-left {
+    transform: translateX(-40px);
+  }
+
+  .reveal-right {
+    transform: translateX(40px);
+  }
+
+  .reveal-zoom {
+    transform: scale(0.92);
+  }
+
+  /* On phones, sideways reveals would push the page wider than the screen: rise instead */
+  @media (max-width: 767px) {
+    .reveal-left,
+    .reveal-right {
+      transform: translateY(24px);
+    }
+  }
+
+  .reveal-visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* One-shot entrance animations for hero / page-title text (runs on load). */
+  @keyframes rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes slide-in-left {
+    from {
+      opacity: 0;
+      transform: translateX(-44px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes slide-in-right {
+    from {
+      opacity: 0;
+      transform: translateX(44px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .anim-rise,
+  .anim-slide-left,
+  .anim-slide-right {
+    opacity: 0;
+    animation-duration: 0.8s;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    animation-fill-mode: forwards;
+    animation-delay: var(--anim-delay, 0ms);
+  }
+
+  .anim-rise {
+    animation-name: rise-in;
+  }
+
+  .anim-slide-left {
+    animation-name: slide-in-left;
+  }
+
+  .anim-slide-right {
+    animation-name: slide-in-right;
+  }
+
+  /* Soft pulsing ring behind the floating WhatsApp button */
+  @keyframes wa-pulse {
+    0% {
+      transform: scale(1);
+      opacity: 0.55;
+    }
+    100% {
+      transform: scale(1.75);
+      opacity: 0;
+    }
+  }
+
+  .wa-float::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    background: #25d366;
+    z-index: -1;
+    animation: wa-pulse 2.2s ease-out infinite;
+  }
+
+  /* Gentle float for decorative hero / founder badges */
+  @keyframes float-y {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+
+  .anim-float {
+    animation: float-y 4.5s ease-in-out infinite;
+  }
+
+  /* Slow pan on the hero photo */
+  @keyframes hero-zoom {
+    from {
+      transform: scale(1.04);
+    }
+    to {
+      transform: scale(1.12);
+    }
+  }
+
+  .anim-hero-zoom {
+    animation: hero-zoom 14s ease-in-out infinite alternate;
+  }
+
+  /* Endless horizontal scroll (testimonials marquee) */
+  @keyframes marquee-x {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  .anim-marquee {
+    animation: marquee-x 55s linear infinite;
+  }
+
+  .anim-marquee:hover {
+    animation-play-state: paused;
+  }
+
+  /* Respect users who prefer reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .reveal {
+      opacity: 1 !important;
+      transform: none !important;
+      transition: none;
+    }
+
+    .anim-rise,
+    .anim-slide-left,
+    .anim-slide-right {
+      opacity: 1 !important;
+      animation: none !important;
+    }
+
+    .wa-float::before,
+    .anim-float,
+    .anim-hero-zoom,
+    .anim-marquee {
+      animation: none !important;
+    }
+  }
+}

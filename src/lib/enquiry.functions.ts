@@ -7,7 +7,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-console.log("CHECKING ENV:", process.env.ENQUIRY_WEBHOOK_URL ? "URL IS PRESENT" : "URL IS MISSING");
 /** Shared (client + server) validation schema for the enquiry fields. */
 export const enquirySchema = z.object({
   name: z
@@ -77,47 +76,30 @@ function fail(code: string, detail?: string): EnquiryResult {
   return { ok: false, error: `${GENERIC_ERROR} (Error code: ${code})` };
 }
 
-async function verifyTurnstile(token: string | undefined, ip: string, secret: string | undefined): Promise<boolean> {
-  if (!secret) return true;
-  if (!token) return false;
-  try {
-    const body = new URLSearchParams({ secret, response: token });
-    if (ip) body.set("remoteip", ip);
-    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-      method: "POST",
-      body,
-      signal: AbortSignal.timeout(8000),
-    });
-    const json = (await res.json()) as { success?: boolean };
-    return json.success === true;
-  } catch (err) {
-    console.error("Turnstile verification failed:", err);
-    return false;
-  }
-}
-
 export const submitEnquiry = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => submitSchema.parse(data))
   .handler(async ({ data }): Promise<EnquiryResult> => {
-    // 👇 YAHAN CLOUDFLARE KA OFFICIAL METHOD USE KIYA HAI 👇
     const { getRequestEvent } = await import("@tanstack/react-start/server");
     const event = getRequestEvent();
-    // TanStack Start ke Cloudflare environment se env nikalna
     const env = (event?.context as any)?.cloudflare?.env || (event?.context as any)?.env || process.env;
 
     const ip = clean(event?.request?.headers?.get("cf-connecting-ip") ?? "").slice(0, 64);
 
+    // 1. Bots: filled honeypot or a form "submitted" faster than a person can type.
     if (clean(data.website) !== "") return { ok: true };
     if (typeof data.elapsedMs === "number" && data.elapsedMs < MIN_FILL_MS) return { ok: true };
 
-    if (!(await verifyTurnstile(data.token, ip, env.TURNSTILE_SECRET_KEY))) {
-      return { ok: false, error: "Verification failed. Please refresh the page and try again." };
-    }
+    // 2. Turnstile (Bot Check) - ABHI KE LIYE BAND HAI 👇
+    // if (!(await verifyTurnstile(data.token, ip, env.TURNSTILE_SECRET_KEY))) {
+    //   return { ok: false, error: "Verification failed. Please refresh the page and try again." };
+    // }
 
+    // 3. Rate limit per IP and per mobile number.
     if ((ip && tooMany(`ip:${ip}`)) || tooMany(`mobile:${data.mobile}`)) {
       return { ok: false, error: "Too many enquiries. Please call us instead." };
     }
 
+    // 4. Deliver to the Google Apps Script web app (Google Sheet + email).
     const webhookSecret = env.ENQUIRY_WEBHOOK_SECRET;
     const webhookUrlRaw = env.ENQUIRY_WEBHOOK_URL;
 

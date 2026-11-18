@@ -52,8 +52,8 @@ export const CONTACT = {
   /** Landline printed on the signboard. */
   landlineDisplay: "022-25941650",
   landlineHref: "tel:+912225941650",
-  email: "info@ashadeepinstitute.in",
-  emailHref: "mailto:info@ashadeepinstitute.in",
+  email: "info@ashadeepcomputerinstitute.com",
+  emailHref: "info@ashadeepcomputerinstitute.com",
   hours: "Mon – Sat: 9:00 AM – 8:00 PM",
   whatsapp: "https://wa.me/+918452003841",
   /** Pre-filled message used by the floating WhatsApp button. */

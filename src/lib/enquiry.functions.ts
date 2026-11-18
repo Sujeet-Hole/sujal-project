@@ -74,8 +74,22 @@ function clean(value: string | undefined): string {
   return out.trim();
 }
 
+// 👇 NAYA HELPER FUNCTION CLOUDFLARE WORKERS KE LIYE 👇
+async function getEnv(name: string): Promise<string | undefined> {
+  try {
+    // @ts-ignore
+    const { env } = await import("cloudflare:workers");
+    const v = env[name];
+    if (typeof v === "string" && v) return v;
+  } catch {
+    /* Workers ke bahar (local dev): process.env use hoga */
+  }
+  return process.env[name];
+}
+
 async function verifyTurnstile(token: string | undefined, ip: string): Promise<boolean> {
-  const secret = process.env["TURNSTILE_SECRET_KEY"];
+  // 👇 UPDATE KIYA GAYA HAI 👇
+  const secret = await getEnv("TURNSTILE_SECRET_KEY");
   if (!secret) {
     // Not configured (local development only). Production must set the secret.
     return true;
@@ -97,8 +111,9 @@ async function verifyTurnstile(token: string | undefined, ip: string): Promise<b
   }
 }
 
-function webhookUrl(): URL | null {
-  const raw = process.env["ENQUIRY_WEBHOOK_URL"];
+// 👇 UPDATE KIYA GAYA HAI 👇
+async function webhookUrl(): Promise<URL | null> {
+  const raw = await getEnv("ENQUIRY_WEBHOOK_URL");
   if (!raw) return null;
   try {
     const url = new URL(raw);
@@ -142,10 +157,14 @@ export const submitEnquiry = createServerFn({ method: "POST" })
     // 4. Deliver to the Google Apps Script web app (Google Sheet + email).
     //    Every failure returns a short error code (never a secret) so the cause is
     //    visible on the form and in the Cloudflare logs.
-    if (!process.env["ENQUIRY_WEBHOOK_SECRET"]) return fail("ENV_SECRET_MISSING");
-    if (!process.env["ENQUIRY_WEBHOOK_URL"]) return fail("ENV_URL_MISSING");
-    const url = webhookUrl();
+    
+    // 👇 UPDATE KIYA GAYA HAI 👇
+    const webhookSecret = await getEnv("ENQUIRY_WEBHOOK_SECRET");
+    if (!webhookSecret) return fail("ENV_SECRET_MISSING");
+    if (!(await getEnv("ENQUIRY_WEBHOOK_URL"))) return fail("ENV_URL_MISSING");
+    const url = await webhookUrl();
     if (!url) return fail("ENV_URL_INVALID");
+    
     try {
       const res = await fetch(url, {
         method: "POST",
@@ -153,7 +172,7 @@ export const submitEnquiry = createServerFn({ method: "POST" })
         redirect: "follow",
         signal: AbortSignal.timeout(12000),
         body: JSON.stringify({
-          secret: process.env["ENQUIRY_WEBHOOK_SECRET"],
+          secret: webhookSecret, // 👈 Yahan bhi update kiya gaya hai
           name: clean(data.name),
           mobile: clean(data.mobile),
           course: clean(data.course),

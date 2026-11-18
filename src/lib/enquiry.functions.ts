@@ -7,6 +7,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+console.log("CHECKING ENV:", process.env.ENQUIRY_WEBHOOK_URL ? "URL IS PRESENT" : "URL IS MISSING");
 /** Shared (client + server) validation schema for the enquiry fields. */
 export const enquirySchema = z.object({
   name: z
@@ -71,9 +72,12 @@ function clean(value: string | undefined): string {
   return out.trim();
 }
 
-// 👇 YAHAN MAIN CHANGE HAI: getEnv ko hata kar direct context.env use kiya hai 👇
-async function verifyTurnstile(token: string | undefined, ip: string, env: any): Promise<boolean> {
-  const secret = env.TURNSTILE_SECRET_KEY;
+function fail(code: string, detail?: string): EnquiryResult {
+  console.error(`Enquiry not delivered [${code}]`, detail ?? "");
+  return { ok: false, error: `${GENERIC_ERROR} (Error code: ${code})` };
+}
+
+async function verifyTurnstile(token: string | undefined, ip: string, secret: string | undefined): Promise<boolean> {
   if (!secret) return true;
   if (!token) return false;
   try {
@@ -87,45 +91,26 @@ async function verifyTurnstile(token: string | undefined, ip: string, env: any):
     const json = (await res.json()) as { success?: boolean };
     return json.success === true;
   } catch (err) {
-    console.error("Turnstile verification failed:", err instanceof Error ? err.message : err);
+    console.error("Turnstile verification failed:", err);
     return false;
   }
 }
 
-function webhookUrl(env: any): URL | null {
-  const raw = env.ENQUIRY_WEBHOOK_URL;
-  if (!raw) return null;
-  try {
-    const url = new URL(raw);
-    const hostOk = url.hostname === "script.google.com" || url.hostname.endsWith(".google.com");
-    const localOk = url.hostname === "127.0.0.1" || url.hostname === "localhost";
-    if (url.protocol === "https:" && hostOk) return url;
-    if (localOk) return url;
-  } catch {
-    /* fall through */
-  }
-  return null;
-}
-
-function fail(code: string, detail?: string): EnquiryResult {
-  console.error(`Enquiry not delivered [${code}]`, detail ?? "");
-  return { ok: false, error: `${GENERIC_ERROR} (Error code: ${code})` };
-}
-
 export const submitEnquiry = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => submitSchema.parse(data))
-  // 👇 YAHAN CONTEXT SE ENV NIKALA HAI JO CLOUDFLARE KA ASLI TARIKA HAI 👇
-  .handler(async ({ data, context }): Promise<EnquiryResult> => {
-    // Cloudflare apna environment variables context mein bhejta hai
-    const env = (context as any)?.cloudflare?.env || (context as any)?.env || process.env;
+  .handler(async ({ data }): Promise<EnquiryResult> => {
+    // 👇 YAHAN CLOUDFLARE KA OFFICIAL METHOD USE KIYA HAI 👇
+    const { getRequestEvent } = await import("@tanstack/react-start/server");
+    const event = getRequestEvent();
+    // TanStack Start ke Cloudflare environment se env nikalna
+    const env = (event?.context as any)?.cloudflare?.env || (event?.context as any)?.env || process.env;
 
-    const { getRequestHeader } = await import("@tanstack/react-start/server");
-    const ip = clean(getRequestHeader("cf-connecting-ip") ?? "").slice(0, 64);
+    const ip = clean(event?.request?.headers?.get("cf-connecting-ip") ?? "").slice(0, 64);
 
     if (clean(data.website) !== "") return { ok: true };
     if (typeof data.elapsedMs === "number" && data.elapsedMs < MIN_FILL_MS) return { ok: true };
 
-    if (!(await verifyTurnstile(data.token, ip, env))) {
+    if (!(await verifyTurnstile(data.token, ip, env.TURNSTILE_SECRET_KEY))) {
       return { ok: false, error: "Verification failed. Please refresh the page and try again." };
     }
 
@@ -133,11 +118,18 @@ export const submitEnquiry = createServerFn({ method: "POST" })
       return { ok: false, error: "Too many enquiries. Please call us instead." };
     }
 
-    if (!env.ENQUIRY_WEBHOOK_SECRET) return fail("ENV_SECRET_MISSING");
-    if (!env.ENQUIRY_WEBHOOK_URL) return fail("ENV_URL_MISSING");
+    const webhookSecret = env.ENQUIRY_WEBHOOK_SECRET;
+    const webhookUrlRaw = env.ENQUIRY_WEBHOOK_URL;
+
+    if (!webhookSecret) return fail("ENV_SECRET_MISSING");
+    if (!webhookUrlRaw) return fail("ENV_URL_MISSING");
     
-    const url = webhookUrl(env);
-    if (!url) return fail("ENV_URL_INVALID");
+    let url: URL;
+    try {
+      url = new URL(webhookUrlRaw);
+    } catch {
+      return fail("ENV_URL_INVALID");
+    }
     
     try {
       const res = await fetch(url, {
@@ -146,7 +138,7 @@ export const submitEnquiry = createServerFn({ method: "POST" })
         redirect: "follow",
         signal: AbortSignal.timeout(12000),
         body: JSON.stringify({
-          secret: env.ENQUIRY_WEBHOOK_SECRET,
+          secret: webhookSecret,
           name: clean(data.name),
           mobile: clean(data.mobile),
           course: clean(data.course),

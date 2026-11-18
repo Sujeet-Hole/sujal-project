@@ -47,7 +47,7 @@ export function Footer() {
             an official MKCL partner.
           </p>
           <Link to="/contact" search={{ course: "" }} className="btn-primary mt-4 !px-5 !py-2.5">
-            Enquire Now
+            Contact Us {/* 👈 Yahan 'Enquire Now' ko 'Contact Us' kar diya hai */}
             <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
         </div>
@@ -95,16 +95,16 @@ export function Footer() {
                   {CONTACT.phoneDisplay}
                 </a>
                 <span className="mx-1.5 text-white/30">|</span>
-                <a href={CONTACT.landlineHref} className="hover:text-brand-glow">
-                  {CONTACT.landlineDisplay}
-                </a>
+                {/* Landline ka href hata diya hai agar zaroorat ho toh wapas laga sakte hain */}
+                <span>{CONTACT.landlineDisplay}</span>
               </span>
             </li>
             <li className="flex items-start gap-2">
               <Mail className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-glow" aria-hidden />
-              <a href={CONTACT.emailHref} className="min-w-0 break-all hover:text-brand-glow">
+              {/* 👇 Yahan se <a> aur href hata diya hai, ab ye clickable nahi hai 👇 */}
+              <span className="min-w-0 break-all">
                 {CONTACT.email}
-              </a>
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand-glow" aria-hidden />

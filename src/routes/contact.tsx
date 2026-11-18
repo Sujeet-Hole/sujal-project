@@ -72,7 +72,7 @@ const INFO: {
     href: CONTACT.whatsapp,
     external: true,
   },
-  { icon: Mail, label: "Email Us", value: CONTACT.email, href: CONTACT.emailHref },
+  { icon: Mail, label: "Email Us", value: CONTACT.email }, // 👈 Yahan se href hata diya hai
   { icon: Clock, label: "Our Timings", value: CONTACT.hours },
 ];
 

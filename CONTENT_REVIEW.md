@@ -10,7 +10,7 @@
 - Testimonials: 8 real Google reviews (name, profile photo, comment only).
 
 ## Please confirm
-- Phone / WhatsApp: set to **+91 84520 03841** (and landline 022-25941650) from the signboard. The old number was a placeholder.
+- Phone / WhatsApp: set to **+91 84520 03841** (and landline ) from the signboard. The old number was a placeholder.
 - Email `info@ashadeepcomputerinstitute.com` is still a placeholder.
 - Hero photo is low resolution (cropped from a small banner). Send the original image for a sharper hero.
 - Founder bio text is general; edit `FOUNDER.bio` / `FOUNDER.quote` in `src/data/site.ts`.

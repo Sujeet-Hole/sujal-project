@@ -74,10 +74,10 @@ function clean(value: string | undefined): string {
   return out.trim();
 }
 
-async function verifyTurnstile(token: string | undefined, ip: string): Promise<boolean> {
-  const secret = process.env["TURNSTILE_SECRET_KEY"];
+// Turnstile verification function ko update kiya gaya hai
+async function verifyTurnstile(token: string | undefined, ip: string, secret: string | undefined): Promise<boolean> {
   if (!secret) {
-    // Not configured (local development only). Production must set the secret.
+    // Not configured (local development or Turnstile not setup yet).
     return true;
   }
   if (!token) return false;
@@ -97,22 +97,6 @@ async function verifyTurnstile(token: string | undefined, ip: string): Promise<b
   }
 }
 
-function webhookUrl(): URL | null {
-  const raw = process.env["ENQUIRY_WEBHOOK_URL"];
-  if (!raw) return null;
-  try {
-    const url = new URL(raw);
-    const hostOk = url.hostname === "script.google.com" || url.hostname.endsWith(".google.com");
-    const localOk = url.hostname === "127.0.0.1" || url.hostname === "localhost";
-    if (url.protocol === "https:" && hostOk) return url;
-    // plain http is accepted only for a local test server
-    if (localOk) return url;
-  } catch {
-    /* fall through */
-  }
-  return null;
-}
-
 export const submitEnquiry = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => submitSchema.parse(data))
   .handler(async ({ data }): Promise<EnquiryResult> => {
@@ -120,12 +104,12 @@ export const submitEnquiry = createServerFn({ method: "POST" })
     const ip = clean(getRequestHeader("cf-connecting-ip") ?? "").slice(0, 64);
 
     // 1. Bots: filled honeypot or a form "submitted" faster than a person can type.
-    //    Pretend success so the bot learns nothing.
     if (clean(data.website) !== "") return { ok: true };
     if (typeof data.elapsedMs === "number" && data.elapsedMs < MIN_FILL_MS) return { ok: true };
 
-    // 2. Cloudflare Turnstile (human check).
-    if (!(await verifyTurnstile(data.token, ip))) {
+    // 2. Cloudflare Turnstile (human check) - Ab env handler ke andar access ho raha hai
+    const turnstileSecret = process.env["TURNSTILE_SECRET_KEY"];
+    if (!(await verifyTurnstile(data.token, ip, turnstileSecret))) {
       return { ok: false, error: "Verification failed. Please refresh the page and try again." };
     }
 
@@ -135,11 +119,27 @@ export const submitEnquiry = createServerFn({ method: "POST" })
     }
 
     // 4. Deliver to the Google Apps Script web app (Google Sheet + email).
-    const url = webhookUrl();
+    // Ab env handler ke andar access ho raha hai, module level pe nahi
+    const rawUrl = process.env["ENQUIRY_WEBHOOK_URL"];
+    let url: URL | null = null;
+    
+    if (rawUrl) {
+      try {
+        const parsed = new URL(rawUrl);
+        const hostOk = parsed.hostname === "script.google.com" || parsed.hostname.endsWith(".google.com");
+        const localOk = parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost";
+        if (parsed.protocol === "https:" && hostOk) url = parsed;
+        else if (localOk) url = parsed;
+      } catch {
+        // ignore
+      }
+    }
+
     if (!url) {
       console.error("ENQUIRY_WEBHOOK_URL is missing or invalid; enquiry was not delivered.");
       return { ok: false, error: GENERIC_ERROR };
     }
+
     try {
       const res = await fetch(url, {
         method: "POST",

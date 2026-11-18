@@ -50,15 +50,14 @@ export const CONTACT = {
   phoneDisplay: "+91 84520 03841",
   phoneHref: "tel:+918452003841",
   /** Landline printed on the signboard. */
-  landlineDisplay: "022-25941650",
-  landlineHref: "tel:+912225941650",
+
   email: "info@ashadeepcomputerinstitute.com",
   emailHref: "info@ashadeepcomputerinstitute.com",
   hours: "Mon – Sat: 9:00 AM – 8:00 PM",
   whatsapp: "https://wa.me/+918452003841",
   /** Pre-filled message used by the floating WhatsApp button. */
   whatsappFloat:
-    "https://wa.me/919870143014?text=Hello%20Ashadeep%20Computer%20Institute%2C%20I%20would%20like%20to%20know%20more%20about%20your%20courses.",
+    "https://wa.me/8452003841?text=Hello%20Ashadeep%20Computer%20Institute%2C%20I%20would%20like%20to%20know%20more%20about%20your%20courses.",
   instagram: "https://www.instagram.com/ashadeep_computer_institute",
   facebook: "https://www.facebook.com/share/1HtMUmQAyg/",
   /** Google Maps listing (short link) opened by "Open in Google Maps" / "Get directions". */

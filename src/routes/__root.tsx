@@ -82,6 +82,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      // 👇 GOOGLE VERIFICATION TAG YAHAN ADD KIYA HAI 👇
+      { name: "google-site-verification", content: "1zhc4ZT8lbSK3pW861SAXP6-soeZ2Xm805Ka3GxElZ8" },
       { title: "Ashadeep Computer Institute | Learn Today. Build Your Future." },
       {
         name: "description",

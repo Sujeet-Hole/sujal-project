@@ -41,11 +41,9 @@ export interface EnquiryResult {
 
 const GENERIC_ERROR = "Could not send your enquiry right now. Please try again or call us.";
 const MIN_FILL_MS = 1500;
-const RATE_LIMIT = 5; // enquiries ...
-const RATE_WINDOW_MS = 10 * 60 * 1000; // ... per 10 minutes, per IP and per mobile number
+const RATE_LIMIT = 5;
+const RATE_WINDOW_MS = 10 * 60 * 1000;
 
-// Best-effort limiter (memory of this server instance only). The real protection
-// is Turnstile plus the Cloudflare rate-limiting rule described in DEPLOY.md.
 const recent = new Map<string, number[]>();
 
 function tooMany(key: string): boolean {
@@ -63,7 +61,6 @@ function tooMany(key: string): boolean {
   return false;
 }
 
-/** Remove control characters (keeps normal text, spaces and new lines). */
 function clean(value: string | undefined): string {
   let out = "";
   for (const ch of value ?? "") {
@@ -74,26 +71,10 @@ function clean(value: string | undefined): string {
   return out.trim();
 }
 
-// 👇 NAYA HELPER FUNCTION CLOUDFLARE WORKERS KE LIYE 👇
-async function getEnv(name: string): Promise<string | undefined> {
-  try {
-    // @ts-ignore
-    const { env } = await import("cloudflare:workers");
-    const v = env[name];
-    if (typeof v === "string" && v) return v;
-  } catch {
-    /* Workers ke bahar (local dev): process.env use hoga */
-  }
-  return process.env[name];
-}
-
-async function verifyTurnstile(token: string | undefined, ip: string): Promise<boolean> {
-  // 👇 UPDATE KIYA GAYA HAI 👇
-  const secret = await getEnv("TURNSTILE_SECRET_KEY");
-  if (!secret) {
-    // Not configured (local development only). Production must set the secret.
-    return true;
-  }
+// 👇 YAHAN MAIN CHANGE HAI: getEnv ko hata kar direct context.env use kiya hai 👇
+async function verifyTurnstile(token: string | undefined, ip: string, env: any): Promise<boolean> {
+  const secret = env.TURNSTILE_SECRET_KEY;
+  if (!secret) return true;
   if (!token) return false;
   try {
     const body = new URLSearchParams({ secret, response: token });
@@ -111,16 +92,14 @@ async function verifyTurnstile(token: string | undefined, ip: string): Promise<b
   }
 }
 
-// 👇 UPDATE KIYA GAYA HAI 👇
-async function webhookUrl(): Promise<URL | null> {
-  const raw = await getEnv("ENQUIRY_WEBHOOK_URL");
+function webhookUrl(env: any): URL | null {
+  const raw = env.ENQUIRY_WEBHOOK_URL;
   if (!raw) return null;
   try {
     const url = new URL(raw);
     const hostOk = url.hostname === "script.google.com" || url.hostname.endsWith(".google.com");
     const localOk = url.hostname === "127.0.0.1" || url.hostname === "localhost";
     if (url.protocol === "https:" && hostOk) return url;
-    // plain http is accepted only for a local test server
     if (localOk) return url;
   } catch {
     /* fall through */
@@ -135,34 +114,29 @@ function fail(code: string, detail?: string): EnquiryResult {
 
 export const submitEnquiry = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => submitSchema.parse(data))
-  .handler(async ({ data }): Promise<EnquiryResult> => {
+  // 👇 YAHAN CONTEXT SE ENV NIKALA HAI JO CLOUDFLARE KA ASLI TARIKA HAI 👇
+  .handler(async ({ data, context }): Promise<EnquiryResult> => {
+    // Cloudflare apna environment variables context mein bhejta hai
+    const env = (context as any)?.cloudflare?.env || (context as any)?.env || process.env;
+
     const { getRequestHeader } = await import("@tanstack/react-start/server");
     const ip = clean(getRequestHeader("cf-connecting-ip") ?? "").slice(0, 64);
 
-    // 1. Bots: filled honeypot or a form "submitted" faster than a person can type.
-    //    Pretend success so the bot learns nothing.
     if (clean(data.website) !== "") return { ok: true };
     if (typeof data.elapsedMs === "number" && data.elapsedMs < MIN_FILL_MS) return { ok: true };
 
-    // 2. Cloudflare Turnstile (human check).
-    if (!(await verifyTurnstile(data.token, ip))) {
+    if (!(await verifyTurnstile(data.token, ip, env))) {
       return { ok: false, error: "Verification failed. Please refresh the page and try again." };
     }
 
-    // 3. Rate limit per IP and per mobile number.
     if ((ip && tooMany(`ip:${ip}`)) || tooMany(`mobile:${data.mobile}`)) {
       return { ok: false, error: "Too many enquiries. Please call us instead." };
     }
 
-    // 4. Deliver to the Google Apps Script web app (Google Sheet + email).
-    //    Every failure returns a short error code (never a secret) so the cause is
-    //    visible on the form and in the Cloudflare logs.
+    if (!env.ENQUIRY_WEBHOOK_SECRET) return fail("ENV_SECRET_MISSING");
+    if (!env.ENQUIRY_WEBHOOK_URL) return fail("ENV_URL_MISSING");
     
-    // 👇 UPDATE KIYA GAYA HAI 👇
-    const webhookSecret = await getEnv("ENQUIRY_WEBHOOK_SECRET");
-    if (!webhookSecret) return fail("ENV_SECRET_MISSING");
-    if (!(await getEnv("ENQUIRY_WEBHOOK_URL"))) return fail("ENV_URL_MISSING");
-    const url = await webhookUrl();
+    const url = webhookUrl(env);
     if (!url) return fail("ENV_URL_INVALID");
     
     try {
@@ -172,7 +146,7 @@ export const submitEnquiry = createServerFn({ method: "POST" })
         redirect: "follow",
         signal: AbortSignal.timeout(12000),
         body: JSON.stringify({
-          secret: webhookSecret, // 👈 Yahan bhi update kiya gaya hai
+          secret: env.ENQUIRY_WEBHOOK_SECRET,
           name: clean(data.name),
           mobile: clean(data.mobile),
           course: clean(data.course),
@@ -184,17 +158,14 @@ export const submitEnquiry = createServerFn({ method: "POST" })
       let json: { ok?: boolean; error?: string } | null = null;
       try {
         json = JSON.parse(text) as { ok?: boolean; error?: string };
-      } catch {
-        /* the answer was not JSON (for example a Google sign-in page) */
-      }
+      } catch {}
+      
       if (json?.ok === true) return { ok: true };
       if (json?.error === "unauthorized") return fail("HOOK_UNAUTHORIZED");
       if (json && !("ok" in json)) return fail("HOOK_NO_OK_FIELD", text.slice(0, 120));
       if (json)
         return fail(
-          `HOOK_${String(json.error ?? "REJECTED")
-            .toUpperCase()
-            .slice(0, 20)}`,
+          `HOOK_${String(json.error ?? "REJECTED").toUpperCase().slice(0, 20)}`,
         );
       return fail(`HOOK_NOT_JSON_HTTP_${res.status}`, text.slice(0, 120));
     } catch (err) {

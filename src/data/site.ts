@@ -254,9 +254,9 @@ export const WHY_US: { icon: LucideIcon; label: string }[] = [
 export const GETTING_STARTED: { title: string; text: string }[] = [
   { title: "Explore courses", text: "Browse by category and read what each course covers." },
   {
-    title: "Send an enquiry",
-    text: "Use the enquiry form, call or WhatsApp us, or visit the institute.",
+    title: "Contact us",
+    text: "Call or WhatsApp us, or visit the institute.",
   },
-  { title: "Talk to our team", text: "We contact you with the course details." },
+  { title: "Talk to our team", text: "We guide you with the course details." },
   { title: "Start learning", text: "Build practical skills with guidance from our teachers." },
 ];

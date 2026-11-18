@@ -404,7 +404,7 @@ export function getCourseFaqs(course: Course): Faq[] {
     },
     {
       q: "How can I enroll?",
-      a: `Send an enquiry using the Enquire Now form, call us on ${CONTACT.phoneDisplay}, or visit us at ${CONTACT.addressShort} (${CONTACT.hours}). Our team will contact you with the course details.`,
+      a: `Call or WhatsApp us on ${CONTACT.phoneDisplay}, or visit us at ${CONTACT.addressShort} (${CONTACT.hours}). Our team will guide you with the course details.`,
     },
   ];
 }

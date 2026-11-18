@@ -13,12 +13,12 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 const CSP = [
   "default-src 'self'",
   // 'unsafe-inline' is required for the small inline bootstrap scripts of TanStack Start.
-  "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com",
+  "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",
   "img-src 'self' data: blob: https:",
-  "frame-src https://www.google.com https://challenges.cloudflare.com",
-  "connect-src 'self' https://challenges.cloudflare.com",
+  "frame-src https://www.google.com", // Google Maps ke liye rehne diya hai
+  "connect-src 'self'",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",

@@ -1,13 +1,8 @@
-// Contact page: enquiry form, contact methods, Google Map and a short FAQ.
-// Form submissions are validated client- and server-side, checked for bots
-// (honeypot + Cloudflare Turnstile) and delivered to the institute through the
-// submitEnquiry server function.
+// Contact page: map, contact methods and a short FAQ.
 
-import { useRef, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import {
   ArrowRight,
-  CheckCircle2,
   Clock,
   Mail,
   MapPin,
@@ -21,9 +16,6 @@ import { Reveal } from "@/components/Reveal";
 import { FaqSection } from "@/components/Faq";
 import { CONTACT } from "@/data/site";
 import { CONTACT_FAQS } from "@/data/faqs";
-import { COURSES } from "@/data/courses";
-import { enquirySchema, submitEnquiry } from "@/lib/enquiry.functions";
-import { Turnstile, TURNSTILE_SITE_KEY } from "@/components/Turnstile";
 
 export const Route = createFileRoute("/contact")({
   validateSearch: (search: { course?: string }) => ({
@@ -35,13 +27,13 @@ export const Route = createFileRoute("/contact")({
       {
         name: "description",
         content:
-          "Visit Ashadeep Computer Institute in Bhandup West, Mumbai. Call +91 8452003841 or send an enquiry about any of our computer courses.",
+          "Visit Ashadeep Computer Institute in Bhandup West, Mumbai. Call +91 8452003841 or WhatsApp us for any of our computer courses.",
       },
       { property: "og:title", content: "Contact Us — Ashadeep Computer Institute" },
       {
         property: "og:description",
         content:
-          "Visit us in Bhandup West, Mumbai — Mon to Sat, 9:00 AM to 8:00 PM. Send your course enquiry today.",
+          "Visit us in Bhandup West, Mumbai — Mon to Sat, 9:00 AM to 8:00 PM. Call or WhatsApp us today.",
       },
       { property: "og:url", content: "/contact" },
       { property: "og:type", content: "website" },
@@ -70,7 +62,7 @@ const INFO: {
   {
     icon: Phone,
     label: "Call Us",
-    value: `${CONTACT.phoneDisplay}  ·  ${CONTACT.landlineDisplay}`,
+    value: CONTACT.phoneDisplay,
     href: CONTACT.phoneHref,
   },
   {
@@ -84,107 +76,17 @@ const INFO: {
   { icon: Clock, label: "Our Timings", value: CONTACT.hours },
 ];
 
-const NEXT_STEPS = [
-  "Send your enquiry with the course you are interested in.",
-  "Our team contacts you on the mobile number you share.",
-  "You receive the course details.",
-];
-
-interface FormState {
-  name: string;
-  mobile: string;
-  course: string;
-  message: string;
-}
-
-/** Validation errors keyed by form field. */
-interface FieldErrors {
-  name?: string;
-  mobile?: string;
-  course?: string;
-  message?: string;
-}
-
 function ContactPage() {
-  const { course: preselected } = Route.useSearch();
-  const preselectedTitle =
-    COURSES.find((c) => c.title === preselected || c.slug === preselected)?.title ?? "";
-
-  const [form, setForm] = useState<FormState>({
-    name: "",
-    mobile: "",
-    course: preselectedTitle,
-    message: "",
-  });
-  const [errors, setErrors] = useState<FieldErrors>({});
-  const [status, setStatus] = useState<"idle" | "sending" | "success">("idle");
-  const [formError, setFormError] = useState("");
-  const [website, setWebsite] = useState(""); // honeypot, must stay empty
-  const [token, setToken] = useState("");
-  const [tokenReset, setTokenReset] = useState(0);
-  const openedAt = useRef(Date.now());
-
-  const setField = (field: keyof FormState, value: string) => {
-    setForm((f) => ({ ...f, [field]: value }));
-    setErrors((e) => ({ ...e, [field]: "" }));
-  };
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setFormError("");
-
-    // Client-side validation (the server validates again on its side).
-    const parsed = enquirySchema.safeParse(form);
-    if (!parsed.success) {
-      const fieldErrors: FieldErrors = {};
-      for (const issue of parsed.error.issues) {
-        const key = issue.path[0];
-        if (key === "name" && !fieldErrors.name) fieldErrors.name = issue.message;
-        else if (key === "mobile" && !fieldErrors.mobile) fieldErrors.mobile = issue.message;
-        else if (key === "course" && !fieldErrors.course) fieldErrors.course = issue.message;
-        else if (key === "message" && !fieldErrors.message) fieldErrors.message = issue.message;
-      }
-      setErrors(fieldErrors);
-      return;
-    }
-
-    if (TURNSTILE_SITE_KEY && !token) {
-      setFormError("Please complete the security check below, then send again.");
-      return;
-    }
-
-    setStatus("sending");
-    try {
-      const result = await submitEnquiry({
-        data: {
-          ...parsed.data,
-          website,
-          token,
-          elapsedMs: Date.now() - openedAt.current,
-        },
-      });
-      if (result.ok) {
-        setStatus("success");
-        return;
-      }
-      setFormError(result.error ?? "Something went wrong. Please try again.");
-    } catch {
-      setFormError("Could not send your enquiry right now. Please try again or call us.");
-    }
-    setStatus("idle");
-    setTokenReset((n) => n + 1); // Turnstile tokens are single-use
-  }
-
   return (
     <>
       <PageHero
         title="Contact Us"
-        subtitle="Send an enquiry, call or message us, or visit the institute in Bhandup West, Mumbai."
+        subtitle="Call or message us, or visit the institute in Bhandup West, Mumbai."
         crumbs={[{ label: "Home", to: "/" }, { label: "Contact" }]}
       />
 
       <section className="container-site section-y grid gap-8 lg:grid-cols-2 lg:gap-10">
-        {/* ---- Map + contact info (below the form on phones, beside it on desktop) ---- */}
+        {/* ---- Map + contact info (below the buttons on phones, beside them on desktop) ---- */}
         <div className="min-w-0">
           <Reveal direction="left">
             <iframe
@@ -241,175 +143,28 @@ function ContactPage() {
           </div>
         </div>
 
-        {/* ---- Enquiry form ---- */}
+        {/* ---- Direct Call / WhatsApp Box ---- */}
         <Reveal direction="right" delay={100} className="min-w-0 max-lg:order-first">
           <div className="rounded-3xl border border-border bg-white p-5 shadow-xl shadow-navy/10 sm:p-8">
-            {status === "success" ? (
-              <div className="flex flex-col items-center py-10 text-center">
-                <span className="icon-circle h-16 w-16 bg-tint text-brand">
-                  <CheckCircle2 className="h-8 w-8" aria-hidden />
-                </span>
-                <h3 className="mt-4 text-xl font-extrabold text-navy sm:text-2xl">
-                  Enquiry Sent Successfully!
-                </h3>
-                <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-                  Thank you for reaching out to Ashadeep Computer Institute. Our team will contact
-                  you soon with the course details.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStatus("idle");
-                    setForm({ name: "", mobile: "", course: "", message: "" });
-                  }}
-                  className="btn-primary mt-6"
-                >
-                  Send Another Enquiry
-                  <ArrowRight className="h-4 w-4" aria-hidden />
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} noValidate>
-                <h3 className="text-xl font-extrabold text-navy sm:text-2xl">Enquire Now</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Fill in your details and we will get back to you.
-                </p>
-
-                <div className="mt-6 space-y-4">
-                  <div>
-                    <label htmlFor="name" className="form-label">
-                      Your Name
-                    </label>
-                    <input
-                      id="name"
-                      type="text"
-                      value={form.name}
-                      onChange={(e) => setField("name", e.target.value)}
-                      autoComplete="name"
-                      placeholder="Enter your full name"
-                      className="form-input"
-                      maxLength={100}
-                    />
-                    {errors.name && (
-                      <p className="mt-1 text-xs font-medium text-destructive">{errors.name}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label htmlFor="mobile" className="form-label">
-                      Mobile Number
-                    </label>
-                    <input
-                      id="mobile"
-                      type="tel"
-                      inputMode="numeric"
-                      autoComplete="tel"
-                      value={form.mobile}
-                      onChange={(e) => setField("mobile", e.target.value)}
-                      placeholder="10-digit mobile number"
-                      className="form-input"
-                      maxLength={14}
-                    />
-                    {errors.mobile && (
-                      <p className="mt-1 text-xs font-medium text-destructive">{errors.mobile}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label htmlFor="course" className="form-label">
-                      Select Course
-                    </label>
-                    <select
-                      id="course"
-                      value={form.course}
-                      onChange={(e) => setField("course", e.target.value)}
-                      className="form-input"
-                    >
-                      <option value="">Select a course</option>
-                      {COURSES.map((c) => (
-                        <option key={c.slug} value={c.title}>
-                          {c.title}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.course && (
-                      <p className="mt-1 text-xs font-medium text-destructive">{errors.course}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label htmlFor="message" className="form-label">
-                      Your Message{" "}
-                      <span className="font-normal text-muted-foreground">(optional)</span>
-                    </label>
-                    <textarea
-                      id="message"
-                      value={form.message}
-                      onChange={(e) => setField("message", e.target.value)}
-                      placeholder="Tell us what you would like to learn..."
-                      rows={4}
-                      className="form-input resize-none"
-                      maxLength={1000}
-                    />
-                    {errors.message && (
-                      <p className="mt-1 text-xs font-medium text-destructive">{errors.message}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Honeypot: invisible to people, bots tend to fill it in */}
-                <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
-                  <label htmlFor="website">Leave this field empty</label>
-                  <input
-                    id="website"
-                    name="website"
-                    type="text"
-                    tabIndex={-1}
-                    autoComplete="off"
-                    value={website}
-                    onChange={(e) => setWebsite(e.target.value)}
-                  />
-                </div>
-
-                <Turnstile onToken={setToken} resetKey={tokenReset} />
-
-                {formError && (
-                  <p className="mt-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">
-                    {formError}
-                  </p>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={status === "sending"}
-                  className="btn-primary mt-6 w-full justify-center disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  {status === "sending" ? "Sending..." : "Send Enquiry"}
-                  <ArrowRight className="h-4 w-4" aria-hidden />
-                </button>
-                <p className="mt-3 text-center text-xs text-muted-foreground">
-                  By sending this enquiry you agree to our{" "}
-                  <Link to="/privacy-policy" className="font-semibold text-brand hover:underline">
-                    Privacy Policy
-                  </Link>
-                  .
-                </p>
-              </form>
-            )}
-          </div>
-
-          <div className="mt-5 rounded-3xl bg-tint p-5 sm:p-6">
-            <h3 className="text-base font-bold text-navy">What happens next</h3>
-            <ol className="mt-3 space-y-2">
-              {NEXT_STEPS.map((step, i) => (
-                <li key={step} className="flex items-start gap-3 text-sm text-navy/85">
-                  <span className="icon-circle h-6 w-6 bg-brand text-xs font-bold text-primary-foreground">
-                    {i + 1}
-                  </span>
-                  <span className="pt-0.5">{step}</span>
-                </li>
-              ))}
-            </ol>
+            <h2 className="text-xl font-bold text-navy sm:text-2xl">Talk to us directly</h2>
+            <p className="mt-2 text-sm text-navy/75">
+              Call or WhatsApp us, or visit the institute. We will guide you to the right course.
+            </p>
+            <div className="mt-5 flex flex-col gap-3">
+              <a href={CONTACT.phoneHref} className="btn-primary w-full">
+                <Phone className="h-4 w-4" aria-hidden />
+                Call {CONTACT.phoneDisplay}
+              </a>
+              <a
+                href={CONTACT.whatsapp}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary w-full"
+              >
+                <MessageCircle className="h-4 w-4" aria-hidden />
+                WhatsApp us
+              </a>
+            </div>
           </div>
         </Reveal>
       </section>
